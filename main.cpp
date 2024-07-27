@@ -48,6 +48,10 @@ bool init_chip_8(chip_8_t *chip_8, const char rom_name[]) {
     chip_8->ram[i] = font[i];
   }
 
+  for (int i = 0; i < 64 * 32; i++) {
+    chip_8->display[i] = 0;
+  }
+
   FILE *rom = fopen(rom_name, "rb");
   if (!rom) {
     SDL_Log("ROM FILE %s is invalid\n", rom_name);
