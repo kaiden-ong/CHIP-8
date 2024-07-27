@@ -158,16 +158,22 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       break;
     case 0x3000:
       // 3xkk - SE Vx, byte
-      printf("\n");
+      if (chip_8->V[X] == NN) {
+        chip_8->PC += 2;
+      }
       break;
     case 0x4000:
-    printf("\n");
-      break;
       // 4xkk - SNE Vx, byte
-    case 0x5000:
-    printf("\n");
+      if (chip_8->V[X] != NN) {
+        chip_8->PC += 2;
+      }
       break;
+    case 0x5000:
       // 5xy0 - SE Vx, Vy
+      if (chip_8->V[X] == chip_8->V[Y]) {
+        chip_8->PC += 2;
+      }
+      break;
     case 0x6000:
       // 6xkk - LD Vx, byte
       chip_8->V[X] = NN;
@@ -186,9 +192,11 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       break;
       // 8 instructions
     case 0x9000:
-      printf("\n");
-      break;
       // 9xy0 - SNE Vx, Vy
+      if (chip_8->V[X] != chip_8->V[Y]) {
+        chip_8->PC += 2;
+      }
+      break;
     case 0xA000:
       // Annn - LD I, addr
       printf("Set I to NNN (0x%04X)\n",
@@ -196,13 +204,13 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       chip_8->I = NNN;
       break;
     case 0xB000:
-      printf("\n");
-      break;
       // Bnnn - JP V0, addr
-    case 0xC000:
-      printf("\n");
+      chip_8->PC = NNN + chip_8->V[0];
       break;
+    case 0xC000:
       // Cxkk - RND Vx, byte
+      chip_8->V[X] = (rand() % 256) & NN; 
+      break;
     case 0xD000:
       // Dxyn - DRW Vx, Vy, nibble
       chip_8->V[0xF] = 0;
@@ -239,7 +247,6 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       // 9 instructions
     default:
       printf("Unimplemented Opcode.\n");
-      // cout << "Unknown opcode 0x" << hex << opcode << endl;
       break;
   }
 }
