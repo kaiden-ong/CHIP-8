@@ -203,9 +203,10 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       // Dxyn - DRW Vx, Vy, nibble
       chip_8->V[0xF] = 0;
       for (uint8_t i = 0; i < N; i++) {
+        printf("\n");
         x_coord = original_x;
         const uint8_t sprite_data = chip_8->ram[chip_8->I + i];
-        for (uint8_t j = 7; j >= 0; j--) {
+        for (uint8_t j = 7; j != 255; j--) {
           const bool sprite_pixel = (sprite_data & (1 << j));
           bool *display_pixel = &chip_8->display[y_coord * width + x_coord];
           if (sprite_pixel && *display_pixel) {
@@ -214,7 +215,9 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
           *display_pixel ^= sprite_pixel;
 
           if (++x_coord >= width) { break; }
+          printf("%d\n", j);
         }
+        printf("\n");
         if (++y_coord >= height) { break; }
       }
       printf("Draw N (%u) height sprite at coords V%X (0x%02X), V%X (0x%02X) "
@@ -309,7 +312,7 @@ int main(int argc, char* argv[]) {
     SDL_RenderClear(renderer);
     update_screen(renderer, chip_8);
     emulate_instructions(&chip_8);
-    SDL_Delay(1000); // about 60 fps: 1000ms / 16ms delay
+    SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
   }
 
   final_cleanup(renderer, window);
