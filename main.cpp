@@ -302,10 +302,16 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       break;
     case 0xF000:
       switch (NN) {
-        // case 07:
+        case 07:
+          chip_8->V[X] = chip_8->delayTimer;
+          break;
         // case 0x0A:
-        // case 15:
-        // case 18:
+        case 15:
+          chip_8->delayTimer = chip_8->V[X];
+          break;
+        case 18:
+          chip_8->soundTimer = chip_8->V[X];
+          break;
         case 0x1E:
           chip_8->I += chip_8->V[X];
           break;
@@ -360,6 +366,12 @@ void update_screen(SDL_Renderer* renderer, const chip_8_t chip_8) {
   SDL_RenderPresent(renderer);
 }
 
+void update_timers(chip_8_t *chip_8) {
+  if (chip_8->delayTimer > 0) {
+    chip_8->delayTimer--;
+  }
+}
+
 void final_cleanup(SDL_Renderer* renderer, SDL_Window* window) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
@@ -408,6 +420,7 @@ int main(int argc, char* argv[]) {
     SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255); // Light blue
     SDL_RenderClear(renderer);
     update_screen(renderer, chip_8);
+    update_timers(&chip_8);
     emulate_instructions(&chip_8);
     SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
   }
