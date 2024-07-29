@@ -103,8 +103,6 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
   bool carry;
 
   // printf("Address: 0x%04X, Opcode: 0x%04X Desc: ", chip_8->PC - 2, opcode);
-
-  // // printf("Address: 0x%04x, Opcode: 0x%04x \n", chip_8->PC-2, opcode);
   switch (opcode & 0xF000) {
     case 0x0000:
       switch (opcode & 0x00FF) {
@@ -299,7 +297,28 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
           chip_8->V[X] = chip_8->delayTimer;
           // printf("Set V%X = delay timer value (0x%02X)\n", X, chip_8->delayTimer);
           break;
-        // case 0x0A:
+        case 0x0A: {
+          static bool key_pressed = false;
+          static uint8_t key = 0x0;
+          for (uint8_t i = 0; i < sizeof(chip_8->keypad); i++) {
+            if (chip_8->keypad[i]) {
+              key_pressed = true;
+              key = i;
+            }
+          }
+          if (!key_pressed) {
+            chip_8->PC -= 2;
+          } else {
+            if (chip_8->keypad[key]) {
+              chip_8->PC -= 2;
+            } else {
+              chip_8->V[X] = key;
+              key_pressed = false;
+            }
+          }
+          // printf("Await until a key is pressed; Store key in V%X\n", X);
+          break;
+        }
         case 0x0015:
           chip_8->delayTimer = chip_8->V[X];
           // printf("Set delay timer value = V%X (0x%02X)\n", X, chip_8->V[X]);
