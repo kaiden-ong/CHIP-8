@@ -116,6 +116,7 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
   uint8_t y_coord = chip_8->V[Y] % height;
   const uint8_t original_x = x_coord;
   uint8_t bcd = chip_8->V[X];
+  bool carry;
 
   printf("Address: 0x%04X, Opcode: 0x%04X Desc: ",
            chip_8->PC - 2, opcode);
@@ -208,30 +209,35 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
           break;
         case 4:
           // 8xy4 - ADD Vx, Vy
-          chip_8->V[0xF] = ((uint16_t)(chip_8->V[X] + chip_8->V[Y]) > 255);
+          carry = ((uint16_t)(chip_8->V[X] + chip_8->V[Y]) > 255);
           chip_8->V[X] += chip_8->V[Y];
+          chip_8->V[0xF] = carry;
           break;
         case 5:
           // 8xy5 - SUB Vx, Vy
-          chip_8->V[0xF] = chip_8->V[X] > chip_8->V[Y];
+          carry = chip_8->V[X] >= chip_8->V[Y];
           chip_8->V[X] -= chip_8->V[Y];
+          chip_8->V[0xF] = carry;
           break;
         case 6:
           // 8xy6 - SHR Vx {, Vy}
+          carry = chip_8->V[X] & 0x1;
           chip_8->V[X] = chip_8->V[Y];
-          chip_8->V[0xF] = chip_8->V[X] & 0x1;
           chip_8->V[X] >>= 1; 
+          chip_8->V[0xF] = carry;
           break;
         case 7:
           // 8xy7 - SUBN Vx, Vy
-          chip_8->V[0xF] = chip_8->V[X] > chip_8->V[Y];
+          carry = chip_8->V[Y] >= chip_8->V[X];
           chip_8->V[X] = chip_8->V[Y] - chip_8->V[X];
+          chip_8->V[0xF] = carry;
           break;
         case 0xE:
         // 8xyE - SHL Vx {, Vy}
+          carry = (chip_8->V[X] & 0x80) >> 7;
           chip_8->V[X] = chip_8->V[Y];
-          chip_8->V[0xF] = (chip_8->V[X] & 0x80) >> 7;
           chip_8->V[X] <<= 1;
+          chip_8->V[0xF] = carry;
           break;
       }
       break;
@@ -259,7 +265,6 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       // Dxyn - DRW Vx, Vy, nibble
       chip_8->V[0xF] = 0;
       for (uint8_t i = 0; i < N; i++) {
-        printf("\n");
         x_coord = original_x;
         const uint8_t sprite_data = chip_8->ram[chip_8->I + i];
         for (uint8_t j = 7; j != 255; j--) {
@@ -271,9 +276,7 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
           *display_pixel ^= sprite_pixel;
 
           if (++x_coord >= width) { break; }
-          printf("%d\n", j);
         }
-        printf("\n");
         if (++y_coord >= height) { break; }
       }
       printf("Draw N (%u) height sprite at coords V%X (0x%02X), V%X (0x%02X) "
@@ -301,39 +304,45 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       }
       break;
     case 0xF000:
-      switch (NN) {
-        case 07:
+      switch (opcode & 0x00FF) {
+        case 0x0007:
           chip_8->V[X] = chip_8->delayTimer;
           break;
         // case 0x0A:
-        case 15:
+        case 0x0015:
           chip_8->delayTimer = chip_8->V[X];
           break;
-        case 18:
+        case 0x0018:
           chip_8->soundTimer = chip_8->V[X];
           break;
-        case 0x1E:
+        case 0x001E:
           chip_8->I += chip_8->V[X];
           break;
-        case 29:
+        case 0x0029:
           chip_8->I = chip_8->V[X] * 5;
           break;
-        case 33:
+        case 0x0033:
           chip_8->ram[chip_8->I+2] = bcd % 10;
           bcd /= 10;
           chip_8->ram[chip_8->I+1] = bcd % 10;
           bcd /= 10;
           chip_8->ram[chip_8->I] = bcd;
           break;
-        case 55:
+          printf("Store BCD representation of V%X (0x%02X) at memory from I (0x%04X)\n",
+                           X, chip_8->V[X], chip_8->I);
+        case 0x0055:
           for (uint8_t i = 0; i <= X; i++) {
             chip_8->ram[chip_8->I++] = chip_8->V[i];
           }
+          printf("Register dump V0-V%X (0x%02X) inclusive at memory from I (0x%04X)\n",
+                          X, chip_8->V[X], chip_8->I);
           break;
-        case 66:
+        case 0x0065:
           for (uint8_t i = 0; i <= X; i++) {
             chip_8->V[i] = chip_8->ram[chip_8->I++];
           }
+          printf("Register load V0-V%X (0x%02X) inclusive at memory from I (0x%04X)\n",
+                          X, chip_8->V[X], chip_8->I);
           break;
       }
       break;
@@ -422,7 +431,7 @@ int main(int argc, char* argv[]) {
     update_screen(renderer, chip_8);
     update_timers(&chip_8);
     emulate_instructions(&chip_8);
-    SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
+    // SDL_Delay(1); // about 60 fps: 1000ms / 16ms delay
   }
 
   final_cleanup(renderer, window);
