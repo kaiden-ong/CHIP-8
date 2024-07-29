@@ -115,6 +115,7 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
   uint8_t x_coord = chip_8->V[X] % width;
   uint8_t y_coord = chip_8->V[Y] % height;
   const uint8_t original_x = x_coord;
+  uint8_t bcd = chip_8->V[X];
 
   printf("Address: 0x%04X, Opcode: 0x%04X Desc: ",
            chip_8->PC - 2, opcode);
@@ -188,9 +189,52 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
       chip_8->V[X] += NN;
       break;
     case 0x8000:
-      printf("\n");
+      switch (N) {
+        case 0:
+          // 8xy0 - LD Vx, Vy
+          chip_8->V[X] = chip_8->V[Y];
+          break;
+        case 1:
+          // 8xy1 - OR Vx, Vy
+          chip_8->V[X] |= chip_8->V[Y];
+          break;
+        case 2:
+        // 8xy2 - AND Vx, Vy
+          chip_8->V[X] &= chip_8->V[Y];
+          break;
+        case 3:
+          // 8xy3 - XOR Vx, Vy
+          chip_8->V[X] ^= chip_8->V[Y];
+          break;
+        case 4:
+          // 8xy4 - ADD Vx, Vy
+          chip_8->V[0xF] = ((uint16_t)(chip_8->V[X] + chip_8->V[Y]) > 255);
+          chip_8->V[X] += chip_8->V[Y];
+          break;
+        case 5:
+          // 8xy5 - SUB Vx, Vy
+          chip_8->V[0xF] = chip_8->V[X] > chip_8->V[Y];
+          chip_8->V[X] -= chip_8->V[Y];
+          break;
+        case 6:
+          // 8xy6 - SHR Vx {, Vy}
+          chip_8->V[X] = chip_8->V[Y];
+          chip_8->V[0xF] = chip_8->V[X] & 0x1;
+          chip_8->V[X] >>= 1; 
+          break;
+        case 7:
+          // 8xy7 - SUBN Vx, Vy
+          chip_8->V[0xF] = chip_8->V[X] > chip_8->V[Y];
+          chip_8->V[X] = chip_8->V[Y] - chip_8->V[X];
+          break;
+        case 0xE:
+        // 8xyE - SHL Vx {, Vy}
+          chip_8->V[X] = chip_8->V[Y];
+          chip_8->V[0xF] = (chip_8->V[X] & 0x80) >> 7;
+          chip_8->V[X] <<= 1;
+          break;
+      }
       break;
-      // 8 instructions
     case 0x9000:
       // 9xy0 - SNE Vx, Vy
       if (chip_8->V[X] != chip_8->V[Y]) {
@@ -238,13 +282,55 @@ void decode_and_execute(uint16_t opcode, chip_8_t *chip_8) {
               chip_8->V[Y], chip_8->I);
       break;
     case 0xE000:
-      printf("\n");
+      switch (0xFF00) {
+        case 0x009E:
+          // Ex9E - SKP Vx
+          if (chip_8->keypad[chip_8->V[X]]) {
+            chip_8->PC += 2;
+          }
+          break;
+        case 0x00A1:
+          // ExA1 - SKNP Vx
+          if (!chip_8->keypad[chip_8->V[X]]) {
+            chip_8->PC += 2;
+          }
+          break;
+        default:
+          // cout << "Invalid opcode 0x" << hex << opcode << endl;
+          break;
+      }
       break;
-      // 2 instructions
     case 0xF000:
-      printf("\n");
+      switch (NN) {
+        // case 07:
+        // case 0x0A:
+        // case 15:
+        // case 18:
+        case 0x1E:
+          chip_8->I += chip_8->V[X];
+          break;
+        case 29:
+          chip_8->I = chip_8->V[X] * 5;
+          break;
+        case 33:
+          chip_8->ram[chip_8->I+2] = bcd % 10;
+          bcd /= 10;
+          chip_8->ram[chip_8->I+1] = bcd % 10;
+          bcd /= 10;
+          chip_8->ram[chip_8->I] = bcd;
+          break;
+        case 55:
+          for (uint8_t i = 0; i <= X; i++) {
+            chip_8->ram[chip_8->I++] = chip_8->V[i];
+          }
+          break;
+        case 66:
+          for (uint8_t i = 0; i <= X; i++) {
+            chip_8->V[i] = chip_8->ram[chip_8->I++];
+          }
+          break;
+      }
       break;
-      // 9 instructions
     default:
       printf("Unimplemented Opcode.\n");
       break;
