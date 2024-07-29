@@ -489,12 +489,16 @@ int main(int argc, char* argv[]) {
     handle_input(&chip_8);
     SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255); // Light blue
     SDL_RenderClear(renderer);
+    // const uint64_t start_frame_time = SDL_GetPerformanceCounter();
     for (uint32_t i = 0; i < 600 / 60; i++) {
       emulate_instructions(&chip_8);
     }
+    // const uint64_t end_frame_time = SDL_GetPerformanceCounter();
+    // const double time_elapsed = (double)((end_frame_time - start_frame_time) * 1000) / SDL_GetPerformanceFrequency();
+    // SDL_Delay(16.67f > time_elapsed ? 16.67f - time_elapsed : 0);
     update_screen(renderer, chip_8);
     update_timers(&chip_8);
-    // SDL_Delay(1); // about 60 fps: 1000ms / 16ms delay
+    SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
   }
 
   final_cleanup(renderer, window);
