@@ -449,11 +449,32 @@ void update_timers(chip_8_t *chip_8) {
   if (chip_8->delayTimer > 0) {
     chip_8->delayTimer--;
   }
+  // if (chip_8->soundTimer > 0) {
+  //   chip_8->soundTimer--;
+  //   SDL_PauseAudioDevice(dev, 0); // Zero to play
+  // } else {
+  //   SDL_PauseAudioDevice(dev, 1); // Non-zero to pause
+  // }
 }
+
+// void SDL_AudioCallback(void *userdata, Uint8 *stream, int len) {
+//   (void*)userdata;
+//   uint32_t wave_freq = 261;
+//   const int volume = 100;
+//   uint8_t *audio_data = (uint8_t *)stream;
+//   static uint32_t sampleIndex = 0;
+//   const int32_t square_wave_period = have->freq / wave_freq;
+//   const int32_t half_square_wave_period = square_wave_period / 2;
+
+//   for (int i = 0; i < len / 2; i++) {
+//     audio_data[i] = ((sampleIndex++ / half_square_wave_period) % 2) ? volume : -volume;
+//   }
+// }
 
 void final_cleanup(SDL_Renderer* renderer, SDL_Window* window) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
+  // SDL_CloseAudioDevice(dev);
   SDL_Quit();
 }
 
@@ -462,7 +483,7 @@ int main(int argc, char* argv[]) {
     cout << "SDL_Init Error: " << SDL_GetError() << endl;
     return 1;
   }
-  SDL_Window *window = SDL_CreateWindow("CHIP-8 EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width * scale, height * scale, SDL_WINDOW_ALLOW_HIGHDPI);
+  SDL_Window* window = SDL_CreateWindow("CHIP-8 EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width * scale, height * scale, SDL_WINDOW_ALLOW_HIGHDPI);
   if (window == NULL) {
     cout << "Couldn't create window:" << SDL_GetError() << endl;
     SDL_Quit();
@@ -477,6 +498,25 @@ int main(int argc, char* argv[]) {
       return 1;
   }
 
+  // SDL_AudioSpec want, have;
+  // SDL_AudioDeviceID dev;
+  // SDL_zero(want);
+  // want.freq = 48000;
+  // want.format = AUDIO_S8;
+  // want.channels = 1;
+  // want.samples = 4096;
+  // want.callback = SDL_AudioCallback;
+  // dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+  // if (dev == 0) {
+  //   printf("Failed to open audio"); 
+  //   return 1;
+  // }
+
+  // if (want.channels != have.channels || want.format != have.format) {
+  //   printf("Couldn't get desired spec");
+  //   return 1;
+  // }
+
   chip_8_t chip_8;
   const char *rom_name = argv[1];
   if (!init_chip_8(&chip_8, rom_name)) {
@@ -489,13 +529,14 @@ int main(int argc, char* argv[]) {
     handle_input(&chip_8);
     SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255); // Light blue
     SDL_RenderClear(renderer);
-    // const uint64_t start_frame_time = SDL_GetPerformanceCounter();
-    for (uint32_t i = 0; i < 600 / 60; i++) {
+    const uint64_t start_frame_time = SDL_GetPerformanceCounter();
+    for (uint32_t i = 0; i < 700 / 60; i++) {
       emulate_instructions(&chip_8);
     }
-    // const uint64_t end_frame_time = SDL_GetPerformanceCounter();
-    // const double time_elapsed = (double)((end_frame_time - start_frame_time) * 1000) / SDL_GetPerformanceFrequency();
-    // SDL_Delay(16.67f > time_elapsed ? 16.67f - time_elapsed : 0);
+    
+    const uint64_t end_frame_time = SDL_GetPerformanceCounter();
+    const double time_elapsed = (double)((end_frame_time - start_frame_time) * 1000) / SDL_GetPerformanceFrequency();
+    SDL_Delay(16.67f > time_elapsed ? 16.67f - time_elapsed : 0);
     update_screen(renderer, chip_8);
     update_timers(&chip_8);
     SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
