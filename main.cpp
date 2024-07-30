@@ -435,10 +435,12 @@ void update_screen(SDL_Renderer* renderer, const chip_8_t chip_8) {
     rect.x = (i % width) * scale;
     rect.y = (i / width) * scale;
     if (chip_8.display[i]) {
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
+      SDL_SetRenderDrawColor(renderer, 31, 171, 38, 1);
       SDL_RenderFillRect(renderer, &rect);
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);
+      SDL_RenderDrawRect(renderer, &rect);
     } else {
-      SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255);
+      SDL_SetRenderDrawColor(renderer, 50, 50, 50, 0);
       SDL_RenderFillRect(renderer, &rect);
     }
   }
@@ -527,8 +529,8 @@ int main(int argc, char* argv[]) {
 
   while (chip_8.running) {
     handle_input(&chip_8);
-    SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255); // Light blue
-    SDL_RenderClear(renderer);
+    // SDL_SetRenderDrawColor(renderer, 173, 216, 230, 255); // Light blue
+    // SDL_RenderClear(renderer);
     const uint64_t start_frame_time = SDL_GetPerformanceCounter();
     for (uint32_t i = 0; i < 700 / 60; i++) {
       emulate_instructions(&chip_8);
