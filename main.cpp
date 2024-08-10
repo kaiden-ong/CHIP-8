@@ -541,7 +541,7 @@ int main(int argc, char* argv[]) {
     SDL_Delay(16.67f > time_elapsed ? 16.67f - time_elapsed : 0);
     update_screen(renderer, chip_8);
     update_timers(&chip_8);
-    SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
+    // SDL_Delay(16); // about 60 fps: 1000ms / 16ms delay
   }
 
   final_cleanup(renderer, window);
