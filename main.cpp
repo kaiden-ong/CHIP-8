@@ -11,7 +11,7 @@ const int scale = 1024 / 64;
 typedef struct {
   bool running;
   uint8_t ram[0xFFF]; // ram
-  bool display[4096]; // screen display res
+  bool display[width*height]; // screen display res
   uint16_t stack[12]; // subroutine stack
   uint16_t *stack_pointer;
   uint8_t V[16]; // registers
